@@ -215,8 +215,14 @@ function MOI.delete(model::MOI.ModelLike, c::RootDetBridge)
 end
 
 # Attributes, Bridge acting as a constraint
-function MOI.get(model::MOI.ModelLike, a::MOI.ConstraintPrimal, c::RootDetBridge)
-    t = MOI.get(model, MOI.ConstraintPrimal(), c.gmindex)[1]
-    x = MOI.get(model, MOI.ConstraintPrimal(), c.sdindex)[1:length(c.Δ)]
-    [t; x]
+function MOI.get(model::MOI.ModelLike, attr::Union{MOI.ConstraintPrimal, MOI.ConstraintPrimalStart}, bridge::RootDetBridge)
+    t = MOI.get(model, attr, bridge.gmindex)[1]
+    x = MOI.get(model, attr, bridge.sdindex)[1:length(bridge.Δ)]
+    return vcat(t, x)
+end
+function MOI.get(model::MOI.ModelLike, attr::Union{MOI.ConstraintDual, MOI.ConstraintDualStart}, bridge::RootDetBridge)
+    # TODO rescale off diags by 2
+    t_dual = MOI.get(model, attr, bridge.gmindex)[1]
+    x_dual = MOI.get(model, attr, bridge.gmindex)[1:length(bridge.Δ)]
+    return vcat(t_dual, x_dual)
 end
