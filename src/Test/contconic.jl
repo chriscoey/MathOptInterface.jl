@@ -2682,6 +2682,17 @@ function _det1test(model::MOI.ModelLike, config::TestConfig, vecofvars::Bool, de
         if logdet
             @test MOI.get(model, MOI.ConstraintPrimal(), vc) ≈ 1.0 atol=atol rtol=rtol
         end
+
+        if config.duals
+            if logdet
+                @test MOI.get(model, MOI.ConstraintDual(), c) ≈ [1, 1] atol=atol rtol=rtol
+                @test MOI.get(model, MOI.ConstraintDual(), vc) ≈ -2 atol=atol rtol=rtol
+                @test MOI.get(model, MOI.ConstraintDual(), cX) ≈ [-1, -2, 1, 0, 1] atol=atol rtol=rtol
+            else
+                @test MOI.get(model, MOI.ConstraintDual(), c) ≈ [0.5, 0.5] atol=atol rtol=rtol
+                @test MOI.get(model, MOI.ConstraintDual(), cX) ≈ [-1.0, 0.5, 0.0, 0.5] atol=atol rtol=rtol
+            end
+        end
     end
 end
 
