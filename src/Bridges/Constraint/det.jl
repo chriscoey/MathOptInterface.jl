@@ -160,7 +160,7 @@ function MOI.get(model::MOI.ModelLike, attr::Union{MOI.ConstraintDual, MOI.Const
     x_dual = MOI.get(model, attr, bridge.sdindex)[1:Δ_dim]
     Δ_side_dim = div(Δ_dim * (Δ_dim + 1), 2)
     for i in 2:Δ_side_dim # rescale off-diagonals by 2
-        x_dual[trimap(i, 1) .+ (i - 1)] .*= 2
+        x_dual[trimap(i, 1) .+ (0:(i - 2))] .*= 2
     end
     return vcat(t_dual, u_dual, x_dual)
 end
@@ -259,7 +259,7 @@ function MOI.get(model::MOI.ModelLike, attr::Union{MOI.ConstraintDual, MOI.Const
     x_dual = MOI.get(model, attr, bridge.sdindex)[1:Δ_dim]
     Δ_side_dim = div(Δ_dim * (Δ_dim + 1), 2)
     for i in 2:Δ_side_dim # rescale off-diagonals by 2
-        x_dual[trimap(i, 1) .+ (i - 1)] .*= 2
+        x_dual[trimap(i, 1) .+ (0:(i - 2))] .*= 2
     end
     return vcat(t_dual, x_dual)
 end
