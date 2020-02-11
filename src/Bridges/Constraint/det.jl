@@ -223,6 +223,8 @@ end
 function MOI.get(model::MOI.ModelLike, attr::Union{MOI.ConstraintDual, MOI.ConstraintDualStart}, bridge::RootDetBridge)
     # TODO rescale off diags by 2
     t_dual = MOI.get(model, attr, bridge.gmindex)[1]
-    x_dual = MOI.get(model, attr, bridge.gmindex)[1:length(bridge.Δ)]
+    x_dual = MOI.get(model, attr, bridge.sdindex)[1:length(bridge.Δ)]
+    @show t_dual
+    @show x_dual
     return vcat(t_dual, x_dual)
 end
