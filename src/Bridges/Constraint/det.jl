@@ -162,8 +162,8 @@ function MOI.get(model::MOI.ModelLike, attr::Union{MOI.ConstraintPrimal, MOI.Con
     return vcat(t, u, x)
 end
 function MOI.get(model::MOI.ModelLike, attr::Union{MOI.ConstraintDual, MOI.ConstraintDualStart}, bridge::LogDetBridge)
-    t_dual = -MOI.get(model, attr, bridge.tlindex)
-    u_dual = MOI.get(model, attr, bridge.lcindex[1])[2]
+    t_dual = MOI.get(model, attr, bridge.tlindex)
+    u_dual = sum(MOI.get(model, attr, lcindex_i)[2] for lcindex_i in bridge.lcindex)
     x_dual = MOI.get(model, attr, bridge.sdindex)[1:length(bridge.Δ)]
     rescale_dual!(x_dual)
     return vcat(t_dual, u_dual, x_dual)
@@ -177,13 +177,13 @@ end
 # and 0 = [D'; E'] (PSD, >=, Exp_i)*
 # where
 # A = [0, 0, 0, 1, 0, 0, 0]
-# B = [0, 0, 0, 0, 0, I, 0]
+# B = [0, 0, 0, 0, 0, 1, 0]
 # C = [I, 0, 0, 0, 0, 0, 0]
 # D = [0, I, I(i=j), 0, 0, 0, I(i=j)]
 # E = [0, 0, 0, 1, I, 0, 0]
 # so given dual q = (a, b, c, d, e, f, g), we get
 # t = A' q = d => t = d
-# u = B' q = f => u = f
+# u = B' q = f => u = sum(f)
 # x = C' q = a => x = a
 # offdiag(b) = 0
 # 0 = D' q = diag(b) + diag(c) + g => g = -diag(b) - diag(c)
