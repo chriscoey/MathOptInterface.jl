@@ -2592,7 +2592,7 @@ function _det1test(model::MOI.ModelLike, config::TestConfig, vecofvars::Bool, de
     atol = config.atol
     rtol = config.rtol
     square = detcone == MOI.LogDetConeSquare || detcone == MOI.RootDetConeSquare
-    logdet = detcone == MOI.LogDetConeTriangle || detcone == MOI.LogDetConeSquare
+    use_logdet = detcone == MOI.LogDetConeTriangle || detcone == MOI.LogDetConeSquare
     # We look for an ellipsoid x^T P x ≤ 1 contained in the square.
     # Let Q = inv(P) (x^T Q x ≤ 1 is its polar ellipsoid), we have
     # max t
@@ -2609,7 +2609,7 @@ function _det1test(model::MOI.ModelLike, config::TestConfig, vecofvars::Bool, de
     @test MOIU.supports_default_copy_to(model, #=copy_names=# false)
     @test MOI.supports(model, MOI.ObjectiveFunction{MOI.ScalarAffineFunction{Float64}}())
     @test MOI.supports(model, MOI.ObjectiveSense())
-    if logdet
+    if use_logdet
         @test MOI.supports_constraint(model, MOI.SingleVariable, MOI.EqualTo{Float64})
     end
     if vecofvars
@@ -2627,7 +2627,7 @@ function _det1test(model::MOI.ModelLike, config::TestConfig, vecofvars::Bool, de
     Q = MOI.add_variables(model, square ? 4 : 3)
     @test MOI.get(model, MOI.NumberOfVariables()) == (square ? 5 : 4)
 
-    if logdet
+    if use_logdet
         u = MOI.add_variable(model)
         vc = MOI.add_constraint(model, MOI.SingleVariable(u), MOI.EqualTo(1.0))
         @test vc.value == u.value
@@ -2657,12 +2657,12 @@ function _det1test(model::MOI.ModelLike, config::TestConfig, vecofvars::Bool, de
 
         @test MOI.get(model, MOI.PrimalStatus()) == MOI.FEASIBLE_POINT
 
-        expectedobjval = logdet ? 0. : 1.
+        expectedobjval = use_logdet ? 0. : 1.
         @test MOI.get(model, MOI.ObjectiveValue()) ≈ expectedobjval atol=atol rtol=rtol
 
         @test MOI.get(model, MOI.VariablePrimal(), t) ≈ expectedobjval atol=atol rtol=rtol
 
-        if logdet
+        if use_logdet
             @test MOI.get(model, MOI.VariablePrimal(), u) ≈ 1.0 atol=atol rtol=rtol
         end
 
@@ -2676,15 +2676,15 @@ function _det1test(model::MOI.ModelLike, config::TestConfig, vecofvars::Bool, de
 
         tQv = MOI.get(model, MOI.ConstraintPrimal(), cX)
         @test tQv[1] ≈ expectedobjval atol=atol rtol=rtol
-        @test tQv[(logdet ? 3 : 2):end] ≈ Qv atol=atol rtol=rtol
+        @test tQv[(use_logdet ? 3 : 2):end] ≈ Qv atol=atol rtol=rtol
 
         @test MOI.get(model, MOI.ConstraintPrimal(), c) ≈ [0., 0.] atol=atol rtol=rtol
-        if logdet
+        if use_logdet
             @test MOI.get(model, MOI.ConstraintPrimal(), vc) ≈ 1.0 atol=atol rtol=rtol
         end
 
         if config.duals
-            if logdet
+            if use_logdet
                 @test MOI.get(model, MOI.ConstraintDual(), c) ≈ [1, 1] atol=atol rtol=rtol
                 @test MOI.get(model, MOI.ConstraintDual(), vc) ≈ 2 atol=atol rtol=rtol
                 @test MOI.get(model, MOI.ConstraintDual(), cX) ≈ [-1, -2, 1, 0, 1] atol=atol rtol=rtol
@@ -2705,7 +2705,7 @@ function _det2test(model::MOI.ModelLike, config::TestConfig, detcone)
     atol = config.atol
     rtol = config.rtol
     square = detcone == MOI.LogDetConeSquare || detcone == MOI.RootDetConeSquare
-    logdet = detcone == MOI.LogDetConeTriangle || detcone == MOI.LogDetConeSquare
+    use_logdet = detcone == MOI.LogDetConeTriangle || detcone == MOI.LogDetConeSquare
     # We find logdet or rootdet of a symmetric PSD matrix:
     # mat = |3  2  1|
     #       |2  2  1|
@@ -2731,7 +2731,7 @@ function _det2test(model::MOI.ModelLike, config::TestConfig, detcone)
     MOI.set(model, MOI.ObjectiveSense(), MOI.MAX_SENSE)
 
     constant_mat = square ? vec(mat) : matL
-    constant_vec = logdet ? vcat(0, 1, constant_mat) : vcat(0, constant_mat)
+    constant_vec = use_logdet ? vcat(0, 1, constant_mat) : vcat(0, constant_mat)
     vaf = MOI.VectorAffineFunction([MOI.VectorAffineTerm(1, MOI.ScalarAffineTerm(1.0, t))], constant_vec)
     det_constraint = MOI.add_constraint(model, vaf, detcone(3))
     @test MOI.get(model, MOI.NumberOfConstraints{MOI.VectorAffineFunction{Float64}, detcone}()) == 1
@@ -2745,19 +2745,19 @@ function _det2test(model::MOI.ModelLike, config::TestConfig, detcone)
 
         @test MOI.get(model, MOI.PrimalStatus()) == MOI.FEASIBLE_POINT
 
-        expected_objval = logdet ? logdet(mat) : (det(mat) ^ inv(3))
+        expected_objval = use_logdet ? logdet(mat) : (det(mat) ^ inv(3))
         @test MOI.get(model, MOI.ObjectiveValue()) ≈ expected_objval atol=atol rtol=rtol
         @test MOI.get(model, MOI.VariablePrimal(), t) ≈ expected_objval atol=atol rtol=rtol
 
         det_value = MOI.get(model, MOI.ConstraintPrimal(), det_constraint)
         @test det_value[1] ≈ expected_objval atol=atol rtol=rtol
-        if logdet
+        if use_logdet
             @test det_value[2] ≈ 1.0 atol=atol rtol=rtol
         end
-        @test det_value[(logdet ? 3 : 2):end] ≈ (square ? vec(mat) : matL) atol=atol rtol=rtol
+        @test det_value[(use_logdet ? 3 : 2):end] ≈ (square ? vec(mat) : matL) atol=atol rtol=rtol
 
         if config.duals
-            if logdet
+            if use_logdet
                 @test MOI.get(model, MOI.ConstraintDual(), det_constraint) ≈ [-1, log(5) - 3, 1, -2, 1.6, 0, -0.4, 0.4] atol=atol rtol=rtol
             else
                 @test MOI.get(model, MOI.ConstraintDual(), det_constraint) ≈ [-3, 1, -2, 1.6, 0, -0.4, 0.4] / 3 atol=atol rtol=rtol
