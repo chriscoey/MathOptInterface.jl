@@ -2757,11 +2757,9 @@ function _det2test(model::MOI.ModelLike, config::TestConfig, detcone)
         @test det_value[(use_logdet ? 3 : 2):end] ≈ (square ? vec(mat) : matL) atol=atol rtol=rtol
 
         if config.duals
-            if use_logdet
-                @test MOI.get(model, MOI.ConstraintDual(), det_constraint) ≈ [-1, log(5) - 3, 1, -2, 1.6, 0, -0.4, 0.4] atol=atol rtol=rtol
-            else
-                @test MOI.get(model, MOI.ConstraintDual(), det_constraint) ≈ [-3, 1, -2, 1.6, 0, -0.4, 0.4] / 3 atol=atol rtol=rtol
-            end
+            psd_dual_L = [1, -1, 1.6, 0, -0.2, 0.4]
+            dual = use_logdet ? vcat(-1, log(5) - 3, psd_dual_L) : vcat(-1, psd_dual_L / 3)
+            @test MOI.get(model, MOI.ConstraintDual(), det_constraint) ≈ dual atol=atol rtol=rtol
         end
     end
 end
