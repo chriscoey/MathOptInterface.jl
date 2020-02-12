@@ -256,9 +256,12 @@ end
 function MOI.get(model::MOI.ModelLike, attr::Union{MOI.ConstraintDual, MOI.ConstraintDualStart}, bridge::RootDetBridge)
     t_dual = MOI.get(model, attr, bridge.gmindex)[1]
     Δ_dim = length(bridge.Δ)
+    @show Δ_dim
     x_dual = MOI.get(model, attr, bridge.sdindex)[1:Δ_dim]
     Δ_side_dim = MOIU.side_dimension_for_vectorized_dimension(Δ_dim)
+    @show Δ_side_dim
     for i in 2:Δ_side_dim # rescale off-diagonals by 2
+        @show trimap(i, 1) .+ (0:(i - 2))
         x_dual[trimap(i, 1) .+ (0:(i - 2))] .*= 2
     end
     return vcat(t_dual, x_dual)
