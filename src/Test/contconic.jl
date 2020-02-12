@@ -2752,7 +2752,7 @@ function _det2test(model::MOI.ModelLike, config::TestConfig, detcone)
         det_value = MOI.get(model, MOI.ConstraintPrimal(), det_constraint)
         @test det_value[1] ≈ expected_objval atol=atol rtol=rtol
         if logdet
-            det_value[2] ≈ 1.0 atol=atol rtol=rtol
+            @test det_value[2] ≈ 1.0 atol=atol rtol=rtol
         end
         @test det_value[(logdet ? 3 : 2):end] ≈ (square ? vec(mat) : matL) atol=atol rtol=rtol
 
