@@ -2745,7 +2745,7 @@ function _det2test(model::MOI.ModelLike, config::TestConfig, detcone)
 
         @test MOI.get(model, MOI.PrimalStatus()) == MOI.FEASIBLE_POINT
 
-        expected_objval = logdet ? logdet(mat) : det(mat) ^ inv(3)
+        expected_objval = logdet ? logdet(mat) : (det(mat) ^ inv(3))
         @test MOI.get(model, MOI.ObjectiveValue()) ≈ expected_objval atol=atol rtol=rtol
         @test MOI.get(model, MOI.VariablePrimal(), t) ≈ expected_objval atol=atol rtol=rtol
 
