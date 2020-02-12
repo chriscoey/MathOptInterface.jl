@@ -6,6 +6,14 @@ function trimap(i::Integer, j::Integer)
     end
 end
 
+function rescale_dual!(dual::Vector{<:Real})
+    side_dim = MOIU.side_dimension_for_vectorized_dimension(length(dual))
+    for i in 2:side_dim # rescale off-diagonals by 2
+        dual[trimap(i, 1) .+ (0:(i - 2))] .*= 2
+    end
+    return dual
+end
+
 """
     extract_eigenvalues(model, f::MOI.VectorAffineFunction{T}, d::Int, offset::Int) where T
 
@@ -156,12 +164,8 @@ end
 function MOI.get(model::MOI.ModelLike, attr::Union{MOI.ConstraintDual, MOI.ConstraintDualStart}, bridge::LogDetBridge)
     t_dual = -MOI.get(model, attr, bridge.tlindex)
     u_dual = MOI.get(model, attr, bridge.lcindex[1])[2]
-    Δ_dim = length(bridge.Δ)
-    x_dual = MOI.get(model, attr, bridge.sdindex)[1:Δ_dim]
-    Δ_side_dim = div(Δ_dim * (Δ_dim + 1), 2)
-    for i in 2:Δ_side_dim # rescale off-diagonals by 2
-        x_dual[trimap(i, 1) .+ (0:(i - 2))] .*= 2
-    end
+    x_dual = MOI.get(model, attr, bridge.sdindex)[1:length(bridge.Δ)]
+    rescale_dual!(x_dual)
     return vcat(t_dual, u_dual, x_dual)
 end
 
@@ -255,15 +259,8 @@ function MOI.get(model::MOI.ModelLike, attr::Union{MOI.ConstraintPrimal, MOI.Con
 end
 function MOI.get(model::MOI.ModelLike, attr::Union{MOI.ConstraintDual, MOI.ConstraintDualStart}, bridge::RootDetBridge)
     t_dual = MOI.get(model, attr, bridge.gmindex)[1]
-    Δ_dim = length(bridge.Δ)
-    @show Δ_dim
-    x_dual = MOI.get(model, attr, bridge.sdindex)[1:Δ_dim]
-    Δ_side_dim = MOIU.side_dimension_for_vectorized_dimension(Δ_dim)
-    @show Δ_side_dim
-    for i in 2:Δ_side_dim # rescale off-diagonals by 2
-        @show trimap(i, 1) .+ (0:(i - 2))
-        x_dual[trimap(i, 1) .+ (0:(i - 2))] .*= 2
-    end
+    x_dual = MOI.get(model, attr, bridge.sdindex)[1:length(bridge.Δ)]
+    rescale_dual!(x_dual)
     return vcat(t_dual, x_dual)
 end
 
