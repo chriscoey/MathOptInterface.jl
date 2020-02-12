@@ -162,7 +162,7 @@ function MOI.get(model::MOI.ModelLike, attr::Union{MOI.ConstraintPrimal, MOI.Con
     return vcat(t, u, x)
 end
 function MOI.get(model::MOI.ModelLike, attr::Union{MOI.ConstraintDual, MOI.ConstraintDualStart}, bridge::LogDetBridge)
-    t_dual = MOI.get(model, attr, bridge.tlindex)
+    t_dual = -MOI.get(model, attr, bridge.tlindex)
     u_dual = sum(MOI.get(model, attr, lcindex_i)[2] for lcindex_i in bridge.lcindex)
     x_dual = MOI.get(model, attr, bridge.sdindex)[1:length(bridge.Δ)]
     rescale_dual!(x_dual)
