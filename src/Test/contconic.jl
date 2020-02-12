@@ -2701,13 +2701,86 @@ logdett1ftest(model::MOI.ModelLike, config::TestConfig) = _det1test(model, confi
 logdets1vtest(model::MOI.ModelLike, config::TestConfig) = _det1test(model, config, true, MOI.LogDetConeSquare)
 logdets1ftest(model::MOI.ModelLike, config::TestConfig) = _det1test(model, config, false, MOI.LogDetConeSquare)
 
+function _det2test(model::MOI.ModelLike, config::TestConfig, detcone)
+    atol = config.atol
+    rtol = config.rtol
+    square = detcone == MOI.LogDetConeSquare || detcone == MOI.RootDetConeSquare
+    logdet = detcone == MOI.LogDetConeTriangle || detcone == MOI.LogDetConeSquare
+    # We find logdet or rootdet of a symmetric PSD matrix:
+    # mat = |3  2  1|
+    #       |2  2  1|
+    #       |1  1  3|
+    # rootdet(mat) ≈ 1.709976
+    # logdet(mat)  ≈ 1.609438
+
+    mat = Float64[3 2 1; 2 2 1; 1 1 3]
+    matL = Float64[3, 2, 2, 1, 1, 3]
+
+    @test MOIU.supports_default_copy_to(model, #=copy_names=# false)
+    @test MOI.supports(model, MOI.ObjectiveFunction{MOI.SingleVariable}())
+    @test MOI.supports(model, MOI.ObjectiveSense())
+    @test MOI.supports_constraint(model, MOI.VectorAffineFunction{Float64}, detcone)
+
+    MOI.empty!(model)
+    @test MOI.is_empty(model)
+
+    t = MOI.add_variable(model)
+    @test MOI.get(model, MOI.NumberOfVariables()) == 1
+
+    MOI.set(model, MOI.ObjectiveFunction{MOI.SingleVariable}(), MOI.SingleVariable(t))
+    MOI.set(model, MOI.ObjectiveSense(), MOI.MAX_SENSE)
+
+    constant_mat = square ? vec(mat) : matL
+    constant_vec = logdet ? vcat(0, 1, constant_mat) : vcat(0, constant_mat)
+    vaf = MOI.VectorAffineFunction(MOI.VectorAffineTerm(1, MOI.ScalarAffineTerm(1.0, t)), constant_vec)
+    det_constraint = MOI.add_constraint(model, vaf, detcone(3))
+    @test MOI.get(model, MOI.NumberOfConstraints{MOI.VectorAffineFunction{Float64}, detcone}()) == 1
+
+    if config.solve
+        @test MOI.get(model, MOI.TerminationStatus()) == MOI.OPTIMIZE_NOT_CALLED
+
+        MOI.optimize!(model)
+
+        @test MOI.get(model, MOI.TerminationStatus()) == config.optimal_status
+
+        @test MOI.get(model, MOI.PrimalStatus()) == MOI.FEASIBLE_POINT
+
+        expected_objval = logdet ? logdet(mat) : det(mat) ^ inv(3)
+        @test MOI.get(model, MOI.ObjectiveValue()) ≈ expected_objval atol=atol rtol=rtol
+        @test MOI.get(model, MOI.VariablePrimal(), t) ≈ expected_objval atol=atol rtol=rtol
+
+        det_value = MOI.get(model, MOI.ConstraintPrimal(), det_constraint)
+        @test det_value[1] ≈ expected_objval atol=atol rtol=rtol
+        if logdet
+            det_value[2] ≈ 1.0 atol=atol rtol=rtol
+        end
+        @test det_value[(logdet ? 3 : 2):end] ≈ (square ? vec(mat) : matL) atol=atol rtol=rtol
+
+        if config.duals
+            if logdet
+                @test MOI.get(model, MOI.ConstraintDual(), det_constraint) ≈ [-1, log(5) - 3, 1, -2, 1.6, 0, -0.4, 0.4] atol=atol rtol=rtol
+            else
+                @test MOI.get(model, MOI.ConstraintDual(), det_constraint) ≈ [-3, 1, -2, 1.6, 0, -0.4, 0.4] / 3 atol=atol rtol=rtol
+            end
+        end
+    end
+end
+
+logdett2test(model::MOI.ModelLike, config::TestConfig) = _det2test(model, config, MOI.LogDetConeTriangle)
+logdets2test(model::MOI.ModelLike, config::TestConfig) = _det2test(model, config, MOI.LogDetConeSquare)
+
+
 const logdetttests = Dict("logdett1v" => logdett1vtest,
-                          "logdett1f" => logdett1ftest)
+                          "logdett1f" => logdett1ftest,
+                          "logdett2" => logdett2test,
+                          )
 
 @moitestset logdett
 
 const logdetstests = Dict("logdets1v" => logdets1vtest,
-                          "logdets1f" => logdets1ftest)
+                          "logdets1f" => logdets1ftest,
+                          "logdets2" => logdets2test,
+                          )
 
 @moitestset logdets
 
@@ -2720,14 +2793,18 @@ rootdett1vtest(model::MOI.ModelLike, config::TestConfig) = _det1test(model, conf
 rootdett1ftest(model::MOI.ModelLike, config::TestConfig) = _det1test(model, config, false, MOI.RootDetConeTriangle)
 rootdets1vtest(model::MOI.ModelLike, config::TestConfig) = _det1test(model, config, true, MOI.RootDetConeSquare)
 rootdets1ftest(model::MOI.ModelLike, config::TestConfig) = _det1test(model, config, false, MOI.RootDetConeSquare)
+rootdett2test(model::MOI.ModelLike, config::TestConfig) = _det2test(model, config, MOI.RootDetConeTriangle)
+rootdets2test(model::MOI.ModelLike, config::TestConfig) = _det2test(model, config, MOI.RootDetConeSquare)
 
 const rootdetttests = Dict("rootdett1v" => rootdett1vtest,
-                           "rootdett1f" => rootdett1ftest)
+                           "rootdett1f" => rootdett1ftest,
+                           "rootdett2" => rootdett2test)
 
 @moitestset rootdett
 
 const rootdetstests = Dict("rootdets1v" => rootdets1vtest,
-                           "rootdets1f" => rootdets1ftest)
+                           "rootdets1f" => rootdets1ftest,
+                           "rootdets2" => rootdets2test)
 
 @moitestset rootdets
 

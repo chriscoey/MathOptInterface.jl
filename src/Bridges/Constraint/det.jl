@@ -161,14 +161,6 @@ function MOI.get(model::MOI.ModelLike, attr::Union{MOI.ConstraintPrimal, MOI.Con
     x = MOI.get(model, attr, bridge.sdindex)[1:length(bridge.Δ)]
     return vcat(t, u, x)
 end
-function MOI.get(model::MOI.ModelLike, attr::Union{MOI.ConstraintDual, MOI.ConstraintDualStart}, bridge::LogDetBridge)
-    t_dual = MOI.get(model, attr, bridge.tlindex)
-    u_dual = sum(MOI.get(model, attr, lcindex_i)[2] for lcindex_i in bridge.lcindex)
-    x_dual = MOI.get(model, attr, bridge.sdindex)[1:length(bridge.Δ)]
-    rescale_dual!(x_dual)
-    return vcat(t_dual, u_dual, x_dual)
-end
-
 # [X Δ; Δ' Diag(Δ)] in PSD
 # t - sum(l) >= 0
 # (l_i, u, Δ_ii) in Exp
@@ -189,6 +181,13 @@ end
 # 0 = D' q = diag(b) + diag(c) + g => g = -diag(b) - diag(c)
 # let b = 0, so g_i = -c_i
 # 0 = E' q = d + e => d = -e
+function MOI.get(model::MOI.ModelLike, attr::Union{MOI.ConstraintDual, MOI.ConstraintDualStart}, bridge::LogDetBridge)
+    t_dual = MOI.get(model, attr, bridge.tlindex)
+    u_dual = sum(MOI.get(model, attr, lcindex_i)[2] for lcindex_i in bridge.lcindex)
+    x_dual = MOI.get(model, attr, bridge.sdindex)[1:length(bridge.Δ)]
+    rescale_dual!(x_dual)
+    return vcat(t_dual, u_dual, x_dual)
+end
 
 
 """
@@ -257,13 +256,6 @@ function MOI.get(model::MOI.ModelLike, attr::Union{MOI.ConstraintPrimal, MOI.Con
     x = MOI.get(model, attr, bridge.sdindex)[1:length(bridge.Δ)]
     return vcat(t, x)
 end
-function MOI.get(model::MOI.ModelLike, attr::Union{MOI.ConstraintDual, MOI.ConstraintDualStart}, bridge::RootDetBridge)
-    t_dual = MOI.get(model, attr, bridge.gmindex)[1]
-    x_dual = MOI.get(model, attr, bridge.sdindex)[1:length(bridge.Δ)]
-    rescale_dual!(x_dual)
-    return vcat(t_dual, x_dual)
-end
-
 # (t, x) in RootDet <=> exists Δ such that At + Bx + CΔ in (PSD, GeoMean)
 # so RootDet* = [A'; B'] (PSD, GeoMean)*
 # and 0 = [C'] (PSD, GeoMean)*
@@ -277,3 +269,9 @@ end
 # offdiag(b) = 0
 # 0 = C' q = diag(b) + diag(c) + e => e = -diag(b) - diag(c)
 # let b = 0, so e_i = -c_i
+function MOI.get(model::MOI.ModelLike, attr::Union{MOI.ConstraintDual, MOI.ConstraintDualStart}, bridge::RootDetBridge)
+    t_dual = MOI.get(model, attr, bridge.gmindex)[1]
+    x_dual = MOI.get(model, attr, bridge.sdindex)[1:length(bridge.Δ)]
+    rescale_dual!(x_dual)
+    return vcat(t_dual, x_dual)
+end
