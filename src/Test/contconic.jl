@@ -2758,7 +2758,7 @@ function _det2test(model::MOI.ModelLike, config::TestConfig, detcone)
 
         if config.duals
             psd_dual_L = [1, -1, 1.6, 0, -0.2, 0.4]
-            dual = use_logdet ? vcat(-1, log(5) - 3, psd_dual_L) : vcat(-1, psd_dual_L / 3)
+            dual = use_logdet ? vcat(-1, log(5) - 3, psd_dual_L) : vcat(-1, psd_dual_L / 3 * expected_objval)
             @test MOI.get(model, MOI.ConstraintDual(), det_constraint) ≈ dual atol=atol rtol=rtol
         end
     end
