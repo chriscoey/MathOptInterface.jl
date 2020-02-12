@@ -2732,7 +2732,7 @@ function _det2test(model::MOI.ModelLike, config::TestConfig, detcone)
 
     constant_mat = square ? vec(mat) : matL
     constant_vec = logdet ? vcat(0, 1, constant_mat) : vcat(0, constant_mat)
-    vaf = MOI.VectorAffineFunction(MOI.VectorAffineTerm(1, MOI.ScalarAffineTerm(1.0, t)), constant_vec)
+    vaf = MOI.VectorAffineFunction([MOI.VectorAffineTerm(1, MOI.ScalarAffineTerm(1.0, t))], constant_vec)
     det_constraint = MOI.add_constraint(model, vaf, detcone(3))
     @test MOI.get(model, MOI.NumberOfConstraints{MOI.VectorAffineFunction{Float64}, detcone}()) == 1
 
