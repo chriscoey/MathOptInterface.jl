@@ -2687,11 +2687,12 @@ function _det1test(model::MOI.ModelLike, config::TestConfig, vecofvars::Bool, de
             if use_logdet
                 @test MOI.get(model, MOI.ConstraintDual(), c) ≈ [1, 1] atol=atol rtol=rtol
                 @test MOI.get(model, MOI.ConstraintDual(), vc) ≈ 2 atol=atol rtol=rtol
-                @test MOI.get(model, MOI.ConstraintDual(), cX) ≈ [-1, -2, 1, 0, 1] atol=atol rtol=rtol
+                dual = square ? [-1, -2, 1, 0, 0, 1] : [-1, -2, 1, 0, 1]
             else
                 @test MOI.get(model, MOI.ConstraintDual(), c) ≈ [0.5, 0.5] atol=atol rtol=rtol
-                @test MOI.get(model, MOI.ConstraintDual(), cX) ≈ [-1.0, 0.5, 0.0, 0.5] atol=atol rtol=rtol
+                dual = square ? [-1.0, 0.5, 0.0, 0.0, 0.5] : [-1.0, 0.5, 0.0, 0.5]
             end
+            @test MOI.get(model, MOI.ConstraintDual(), cX) ≈ dual atol=atol rtol=rtol
         end
     end
 end
@@ -2757,8 +2758,8 @@ function _det2test(model::MOI.ModelLike, config::TestConfig, detcone)
         @test det_value[(use_logdet ? 3 : 2):end] ≈ (square ? vec(mat) : matL) atol=atol rtol=rtol
 
         if config.duals
-            psd_dual_L = [1, -1, 1.6, 0, -0.2, 0.4]
-            dual = use_logdet ? vcat(-1, log(5) - 3, psd_dual_L) : vcat(-1, psd_dual_L / 3 * expected_objval)
+            psd_dual = square ? [1, -1, 0, -1, 1.6, -0.2, 0, -0.2, 0.4] : [1, -1, 1.6, 0, -0.2, 0.4]
+            dual = use_logdet ? vcat(-1, log(5) - 3, psd_dual) : vcat(-1, psd_dual / 3 * expected_objval)
             @test MOI.get(model, MOI.ConstraintDual(), det_constraint) ≈ dual atol=atol rtol=rtol
         end
     end
