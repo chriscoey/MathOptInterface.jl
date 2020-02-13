@@ -2711,6 +2711,7 @@ function _det2test(model::MOI.ModelLike, config::TestConfig, detcone)
     # mat = |3  2  1|
     #       |2  2  1|
     #       |1  1  3|
+    # det(mat) = 5, so:
     # rootdet(mat) ≈ 1.709976
     # logdet(mat)  ≈ 1.609438
 
@@ -2746,7 +2747,7 @@ function _det2test(model::MOI.ModelLike, config::TestConfig, detcone)
 
         @test MOI.get(model, MOI.PrimalStatus()) == MOI.FEASIBLE_POINT
 
-        expected_objval = use_logdet ? logdet(mat) : (det(mat) ^ inv(3))
+        expected_objval = use_logdet ? log(5) : (5 ^ inv(3))
         @test MOI.get(model, MOI.ObjectiveValue()) ≈ expected_objval atol=atol rtol=rtol
         @test MOI.get(model, MOI.VariablePrimal(), t) ≈ expected_objval atol=atol rtol=rtol
 
