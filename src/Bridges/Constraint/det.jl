@@ -6,18 +6,6 @@ function trimap(i::Integer, j::Integer)
     end
 end
 
-
-
-
-# TODO delete if not used
-# function rescale_dual!(dual::Vector{<:Real})
-#     side_dim = MOIU.side_dimension_for_vectorized_dimension(length(dual))
-#     for i in 2:side_dim # rescale off-diagonals by 2
-#         dual[trimap(i, 1) .+ (0:(i - 2))] .*= 2
-#     end
-#     return dual
-# end
-
 """
     extract_eigenvalues(model, f::MOI.VectorAffineFunction{T}, d::Int, offset::Int) where T
 
@@ -189,7 +177,6 @@ function MOI.get(model::MOI.ModelLike, attr::Union{MOI.ConstraintDual, MOI.Const
     t_dual = MOI.get(model, attr, bridge.tlindex)
     u_dual = sum(MOI.get(model, attr, lcindex_i)[2] for lcindex_i in bridge.lcindex)
     x_dual = MOI.get(model, attr, bridge.sdindex)[1:length(bridge.Δ)]
-    # rescale_dual!(x_dual)
     return vcat(t_dual, u_dual, x_dual)
 end
 
@@ -276,6 +263,5 @@ end
 function MOI.get(model::MOI.ModelLike, attr::Union{MOI.ConstraintDual, MOI.ConstraintDualStart}, bridge::RootDetBridge)
     t_dual = MOI.get(model, attr, bridge.gmindex)[1]
     x_dual = MOI.get(model, attr, bridge.sdindex)[1:length(bridge.Δ)]
-    # rescale_dual!(x_dual)
     return vcat(t_dual, x_dual)
 end
