@@ -112,7 +112,7 @@ function bridge_constraint(::Type{NormNuclearBridge{T, F, G, H}}, model::MOI.Mod
     U = MOI.add_variables(model, U_dim)
     V = MOI.add_variables(model, V_dim)
     diag_vars = vcat([U[trimap(i, i)] for i in 1:column_dim], [V[trimap(i, i)] for i in 1:row_dim])
-    ge_index = MOIU.normalize_and_add_constraint(model, MOIU.operate(-, T, f_scalars[1], MOIU.operate!(/, T, MOIU.operate(sum, T, diag_vars), T(2))), MOI.GreaterThan(zero(T)), allow_modify_function=true)
+    ge_index = MOI.add_constraint(model, MOIU.operate(-, T, f_scalars[1], MOIU.operate!(/, T, MOIU.operate(sum, T, diag_vars), T(2))), MOI.GreaterThan(zero(T)))
     psd_set = MOI.PositiveSemidefiniteConeTriangle(side_dim)
     psd_func = MOI.VectorOfVariables(U)
     nuc_dim = 1 + row_dim * column_dim

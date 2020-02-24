@@ -79,7 +79,7 @@ function bridge_constraint(::Type{NormOneBridge{T, F, G, H}}, model::MOI.ModelLi
     f_scalars = MOIU.eachscalar(f)
     d = MOI.dimension(s)
     y = MOI.add_variables(model, d - 1)
-    ge_index = MOIU.normalize_and_add_constraint(model, MOIU.operate(-, T, f_scalars[1], MOIU.operate(sum, T, y)), MOI.GreaterThan(zero(T)), allow_modify_function=true)
+    ge_index = MOI.add_constraint(model, MOIU.operate(-, T, f_scalars[1], MOIU.operate(sum, T, y)), MOI.GreaterThan(zero(T)))
     lb = f_scalars[2:d]
     ub = MOIU.operate(-, T, lb)
     lb = MOIU.operate!(+, T, lb, MOI.VectorOfVariables(y))
@@ -151,7 +151,6 @@ function MOI.get(model::MOI.ModelLike,
                  bridge::NormOneBridge)
     ge_primal = MOI.get(model, attr, bridge.ge_index)
     nn_primal = MOI.get(model, attr, bridge.nn_index)
-    t = ge_primal + sum(nn_primal) / 2
     d = length(bridge.y)
     x = (nn_primal[(d + 1):end] - nn_primal[1:d]) / 2
     return vcat(t, x)

@@ -17,7 +17,7 @@ function bridge_constraint(::Type{RelativeEntropyBridge{T, F, G, H}}, model::MOI
     d = MOI.dimension(s)
     v_dim = div(d - 1, 2)
     y = MOI.add_variables(model, v_dim)
-    ge_index = MOIU.normalize_and_add_constraint(model, MOIU.operate(-, T, f_scalars[1], MOIU.operate(sum, T, y)), MOI.GreaterThan(zero(T)), allow_modify_function=true)
+    ge_index = MOI.add_constraint(model, MOIU.operate(-, T, f_scalars[1], MOIU.operate(sum, T, y)), MOI.GreaterThan(zero(T)))
     w_start = 1 + v_dim
     exp_funcs = [MOIU.operate(vcat, T, MOIU.operate(-, T, MOI.SingleVariable(y[i])), f_scalars[w_start + i], f_scalars[1 + i]) for i in 1:v_dim]
     exp_indices = [MOI.add_constraint(model, exp_func_i, MOI.ExponentialCone()) for exp_func_i in exp_funcs]
