@@ -118,10 +118,8 @@ end
 Constrains ``t \\le l_1 + \\cdots + l_n`` where `n` is the length of `l` and returns the constraint index.
 """
 function subsum(model, t::MOI.ScalarAffineFunction, l::Vector{MOI.VariableIndex}, ::Type{T}) where T
-    n = length(l)
     f = MOIU.operate!(-, T, t, MOIU.operate(sum, T, l))
-    return MOIU.normalize_and_add_constraint(model, f, MOI.LessThan(zero(T)),
-                                             allow_modify_function=true)
+    return MOI.add_constraint(model, f, MOI.LessThan(zero(T)))
 end
 
 # Attributes, Bridge acting as a model

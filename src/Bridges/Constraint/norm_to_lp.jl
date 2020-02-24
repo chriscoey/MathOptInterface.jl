@@ -151,6 +151,7 @@ function MOI.get(model::MOI.ModelLike,
                  bridge::NormOneBridge)
     ge_primal = MOI.get(model, attr, bridge.ge_index)
     nn_primal = MOI.get(model, attr, bridge.nn_index)
+    t = ge_primal + sum(nn_primal) / 2
     d = length(bridge.y)
     x = (nn_primal[(d + 1):end] - nn_primal[1:d]) / 2
     return vcat(t, x)
